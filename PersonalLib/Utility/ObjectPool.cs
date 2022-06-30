@@ -1,63 +1,55 @@
-using System.Collections;
+/*-------------------------------------------------------------------------
+ * 作者：Unity
+ * 创建时间：2022/6/9 9:46:34
+ * 本类主要用途描述：
+ *------------------------------------------------------------------------*/
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Partita.Utility {
 
     /// <summary>
-    /// 关于T的对象池
+    /// 对象池
     /// </summary>
-    public class ObjectPool<T> : IEnumerable<KeyValuePair<T, bool>> where T : new() {
+    /// <typeparam name="T"></typeparam>
+    public class ObjectPool<T> {
+        readonly Stack<T> m_Stack = new Stack<T>();
+        readonly Action<T> m_ActionOnGet;
+        readonly Action<T> m_ActionOnRelease;
+        readonly Func<T> constructor;
 
-        Dictionary<T, bool> pool;      //存储所有已创建的实例，bool为TRUE表示item闲置
+        public int countAll { get; set; }
+        public int countActive { get { return countAll - countInactive; } }
+        public int countInactive { get { return m_Stack.Count; } }
 
-        public ObjectPool() {
-            pool = new Dictionary<T, bool>();
+        public ObjectPool(Action<T> actionOnGet, Action<T> actionOnRelease, Func<T> constructor) {
+            m_ActionOnGet = actionOnGet;
+            m_ActionOnRelease = actionOnRelease;
+            this.constructor = constructor;
         }
 
-        /// <summary>
-        /// 获取
-        /// </summary>
-        /// <returns></returns>
         public T Get() {
-            foreach (var item in pool) {
-                if (item.Value) {
+            T element;
+            if (m_Stack.Count == 0) {
+                element = constructor();
+                countAll++;
+            }
+            else {
+                element = m_Stack.Pop();
+            }
+            if (m_ActionOnGet != null)
+                m_ActionOnGet(element);
+            return element;
+        }
 
-                    pool[item.Key] = false;
-                    return item.Key;
-
-                }
+        public void Release(T element) {
+            if (m_Stack.Contains(element)) {
+                return;
             }
 
-            T t = new T();
-            pool.Add(t, false);
-            return t;
-        }
-
-        /// <summary>
-        /// 释放
-        /// </summary>
-        /// <param name="t"></param>
-        public void Dispose(T t) {
-            try {
-                pool[t] = true;
-            }
-            catch (KeyNotFoundException) {
-                pool.Add(t, true);
-            }
-        }
-
-        /// <returns>对象池中处于激活状态的元素</returns>
-        public T[] GetActiveElements() {
-            return pool.Where(item => !item.Value).Select(item => item.Key).ToArray();
-        }
-
-        public IEnumerator<KeyValuePair<T, bool>> GetEnumerator() {
-            return ((IEnumerable<KeyValuePair<T, bool>>)pool).GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() {
-            return ((IEnumerable)pool).GetEnumerator();
+            if (m_ActionOnRelease != null)
+                m_ActionOnRelease(element);
+            m_Stack.Push(element);
         }
     }
 }

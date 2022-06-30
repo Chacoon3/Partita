@@ -11,15 +11,18 @@ using UnityEngine.UI;
 namespace Partita.ExtComponent {
 
     /// <summary>
-    ///  ±º‰¬æ
+    /// Êó∂Èó¥ÊàÆ
     /// </summary>
-    public class TimeSelector : Button {
+    /// <remarks>Á±ª‰æùËµñÔºöScrollableTag</remarks>
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(Image))]
+    public class TimeSelector : MonoBehaviour, IPointerClickHandler {
 
         enum TagType {
             Year, Month, Day, Hour, Minute, Second,
         }
 
-        internal DateTime value {
+        public DateTime value {
             get => _value;
             set {
                 if (value == _value) {
@@ -33,11 +36,13 @@ namespace Partita.ExtComponent {
                 }
 
                 _value = value;
+                valueText.text = _value.ToString("F");
+                SetWithoutNotify(_value);
                 onValueChanged.Invoke(value);
             }
         }
 
-        internal DateTime min {
+        public DateTime min {
             get => _min;
             set {
                 if (value == _min) {
@@ -47,12 +52,17 @@ namespace Partita.ExtComponent {
                     value = max;
                 }
 
-                OnSetRange(value, false);
+                tagDict[TagType.Year].min = value.Year;
+                tagDict[TagType.Month].min = value.Month;
+                tagDict[TagType.Day].min = value.Day;
+                tagDict[TagType.Hour].min = value.Hour;
+                tagDict[TagType.Minute].min = value.Minute;
+                tagDict[TagType.Second].min = value.Second;
                 _min = value;
             }
         }
 
-        internal DateTime max {
+        public DateTime max {
             get => _max;
             set {
                 if (value == _max) {
@@ -61,145 +71,95 @@ namespace Partita.ExtComponent {
                 if (value < min) {
                     value = min;
                 }
-                OnSetRange(value, true);
+
+                tagDict[TagType.Year].max = value.Year;
+                tagDict[TagType.Month].max = value.Month;
+                tagDict[TagType.Day].max = value.Day;
+                tagDict[TagType.Hour].max = value.Hour;
+                tagDict[TagType.Minute].max = value.Minute;
+                tagDict[TagType.Second].max = value.Second;
                 _max = value;
             }
         }
 
-        internal UnityEvent<DateTime> onValueChanged { get; } = new UnityEvent<DateTime>();
+        public UnityEvent<DateTime> onValueChanged { get; } = new UnityEvent<DateTime>();
 
-        Dictionary<TagType, ScrollableTag> tagDict=new Dictionary<TagType, ScrollableTag>();
-        Dictionary<TagType, TMP_Text> textDict = new Dictionary<TagType, TMP_Text>();
-        DateTime _value;
+        public bool isOpen {
+            get => _isOpen;
+            set {
+                _isOpen = value;
+                foreach (var item in tagDict) {
+                    item.Value.gameObject.SetActive(value);
+                }
+            }
+        }
+
+        Dictionary<TagType, ScrollableTag> tagDict = new Dictionary<TagType, ScrollableTag>();
+        TMP_Text valueText;
+        DateTime _value = DateTime.MinValue;
         DateTime _min = DateTime.MinValue;
         DateTime _max = DateTime.MaxValue;
 
-        bool isDisplaying;
+        bool _isOpen;
 
-        protected override void Awake() {
-            base.Awake();            
-            Init();
-        }
+        #region ÁîüÂëΩÂë®Êúü
+        protected void Awake() {
 
-        protected override void OnEnable() {
-            base.OnEnable();
-            SetScrollableState();
-        }
+            #region ÈÖçÁΩÆËá™Ë∫´
+            enabled = true;
+            valueText = transform.Find("ValueText").GetComponent<TMP_Text>();
+            #endregion
 
-        protected override void OnDisable() {
-            base.OnDisable();
-            SetScrollableState();
-        }
-
-        void Init() {
+            #region ÈÖçÁΩÆÊó∂Èó¥ÊàÆ
             var scrollables = GetComponentsInChildren<ScrollableTag>();
             int tagType = 0;
-            var tagProto = Resources.Load<GameObject>("DummyPrefab");
-            foreach (var scrollable in scrollables) {
+            foreach (var tag in scrollables) {
                 TagType type = (TagType)tagType;
-                Vector2Int range = default;
+                int min = 0;
+                int max = 0;
                 switch (type) {
                     case TagType.Year:
-                        range = new Vector2Int(1, 9999);
+                        min = 1;
+                        max = 9999;
                         break;
                     case TagType.Month:
-                        range = new Vector2Int(1, 12);
+                        min = 1;
+                        max = 12;
                         break;
                     case TagType.Day:
-                        range = new Vector2Int(1, 31);
+                        min = 1;
+                        max = 31;
                         break;
                     case TagType.Hour:
-                        range = new Vector2Int(0, 23);
+                        min = 0;
+                        max = 23;
                         break;
                     case TagType.Minute:
-                        range = new Vector2Int(0, 59);
-                        break;
                     case TagType.Second:
-                        range = new Vector2Int(0, 59);
+                        min = 0;
+                        max = 59;
                         break;
                 }
-                scrollable.Init(5, 0, Mapper_Normal, Mapper_OutOfBound, tagProto, range);
-                tagDict.Add(type, scrollable);
-
+                tag.min = min;
+                tag.max = max;
+                tagDict.Add(type, tag);
                 tagType++;
             }
 
-            var tmptexts = transform.Find("DisplayTexts").GetComponentsInChildren<TMP_Text>(true);
-            for (int i = 0; i < tmptexts.Length; i++) {
-                TagType type = (TagType)i;
-                textDict.Add(type, tmptexts[i]);
-            }
-
             foreach (var item in tagDict) {
-                item.Value.onValueChanged.AddListener(v => OnScrollableValueChange(v, item.Key));
+                var key = item.Key;
+                item.Value.onValueChanged.AddListener(v => OnScrollableValueChange(v, key));
             }
+            #endregion
 
-            isDisplaying = false;
-            SetScrollableState();
+            isOpen = false;
+            SetWithoutNotify(value);
         }
-
-        void SetScrollableState() {
-            foreach (var item in tagDict) {
-                item.Value.gameObject.SetActive(isDisplaying);
-            }
-        }
-
-        void OnSetRange(DateTime value, bool isSettingMax) {
-            if (isSettingMax) {
-                var range = tagDict[TagType.Year].range;
-                range.y = value.Year;
-                tagDict[TagType.Year].range = range;
-
-                range = tagDict[TagType.Month].range;
-                range.y = value.Month;
-                tagDict[TagType.Month].range = range;
-
-                range = tagDict[TagType.Day].range;
-                range.y = value.Day;
-                tagDict[TagType.Day].range = range;
-
-                range = tagDict[TagType.Hour].range;
-                range.y = value.Hour;
-                tagDict[TagType.Hour].range = range;
-
-                range = tagDict[TagType.Minute].range;
-                range.y = value.Minute;
-                tagDict[TagType.Minute].range = range;
-
-                range = tagDict[TagType.Second].range;
-                range.y = value.Second;
-                tagDict[TagType.Second].range = range;
-            }
-            else {
-                var range = tagDict[TagType.Year].range;
-                range.x = value.Year;
-                tagDict[TagType.Year].range = range;
-
-                range = tagDict[TagType.Month].range;
-                range.x = value.Month;
-                tagDict[TagType.Month].range = range;
-
-                range = tagDict[TagType.Day].range;
-                range.x = value.Day;
-                tagDict[TagType.Day].range = range;
-
-                range = tagDict[TagType.Hour].range;
-                range.x = value.Hour;
-                tagDict[TagType.Hour].range = range;
-
-                range = tagDict[TagType.Minute].range;
-                range.x = value.Minute;
-                tagDict[TagType.Minute].range = range;
-
-                range = tagDict[TagType.Second].range;
-                range.x = value.Second;
-                tagDict[TagType.Second].range = range;
-            }
-        }
+        #endregion
 
         void OnScrollableValueChange(int val, TagType type) {
-            DateTime newValue = GetCurrentValue();
-            //clamp≤Ÿ◊˜
+            DateTime newValue = GetValueFromTags();
+            //clamp
             if (newValue < min) {
                 newValue = min;
             }
@@ -210,35 +170,31 @@ namespace Partita.ExtComponent {
             this.value = newValue;
 
             if (this.value.Month == 2) {
-                if (DateTime.IsLeapYear( this.value.Year)) {        //2‘¬
-                    tagDict[TagType.Day].range = new Vector2Int(1, 29);     //»ÚƒÍ
+                if (DateTime.IsLeapYear(this.value.Year)) {        //2ÊúàÈó∞Âπ¥
+                    tagDict[TagType.Day].min = 1;
+                    tagDict[TagType.Day].max = 29;
                 }
-                else {
-                    tagDict[TagType.Day].range = new Vector2Int(1, 28);     //≤ª»ÚƒÍ
+                else {//2Êúà‰∏çÈó∞Âπ¥
+                    tagDict[TagType.Day].min = 1;
+                    tagDict[TagType.Day].max = 28;
                 }
             }
-            else if (IsBigMonth(this.value.Month)) {        //¥Û‘¬
-                tagDict[TagType.Day].range = new Vector2Int(1, 31);
+            else if (IsBigMonth(this.value.Month)) {        //Â§ßÊúà
+                tagDict[TagType.Day].min = 1;
+                tagDict[TagType.Day].max = 31;
             }
-            else {      //–°‘¬
-                tagDict[TagType.Day].range = new Vector2Int(1, 30);
+            else {      //Â∞èÊúà
+                tagDict[TagType.Day].min = 1;
+                tagDict[TagType.Day].max = 30;
             }
 
             tagDict[type].SetWithoutNotify(val);
 
-            textDict[type].text = tagDict[type].value.ToString();
+            valueText.text = value.ToString("F");
         }
 
-        void Mapper_Normal(int state, GameObject obj) {
-            obj.GetComponent<TMP_Text>().text = state.ToString();
-        }
-
-        void Mapper_OutOfBound(int state, GameObject obj) {
-            obj.GetComponent<TMP_Text>().text = null;
-        }
-
-        DateTime GetCurrentValue() {
-            //¥”◊”Ω⁄µ„ScrollableTagªÒ»°µΩ∂‘”¶µƒDatetime
+        DateTime GetValueFromTags() {
+            //‰ªéÂ≠êËäÇÁÇπScrollableTagËé∑ÂèñÂà∞ÂØπÂ∫îÁöÑDatetime
             int year = tagDict[TagType.Year].value;
             int month = tagDict[TagType.Month].value;
             int day = tagDict[TagType.Day].value;
@@ -247,17 +203,17 @@ namespace Partita.ExtComponent {
             int second = tagDict[TagType.Second].value;
 
             if (month == 2) {
-                if (DateTime.IsLeapYear(year)) {        //2‘¬
-                    day = Mathf.Clamp(day, 1, 29);  //»ÚƒÍ
+                if (DateTime.IsLeapYear(year)) {        //2Êúà
+                    day = Mathf.Clamp(day, 1, 29);  //Èó∞Âπ¥
                 }
                 else {
-                    day = Mathf.Clamp(day, 1, 28);    //≤ª»ÚƒÍ
+                    day = Mathf.Clamp(day, 1, 28);    //‰∏çÈó∞Âπ¥
                 }
             }
-            else if (IsBigMonth(month)) {        //¥Û‘¬
+            else if (IsBigMonth(month)) {        //Â§ßÊúà
                 day = Mathf.Clamp(day, 1, 31);
             }
-            else {      //–°‘¬
+            else {      //Â∞èÊúà
                 day = Mathf.Clamp(day, 1, 30);
             }
             return new DateTime(year, month, day, hour, minute, second);
@@ -267,10 +223,25 @@ namespace Partita.ExtComponent {
             return (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12);
         }
 
-        public override void OnPointerClick(PointerEventData eventData) {
-            base.OnPointerClick(eventData);
-            isDisplaying = !isDisplaying;
-            SetScrollableState();
+        public void SetWithoutNotify(DateTime value) {
+            if (value < min) {
+                value = min;
+            }
+            if (value > max) {
+                value = max;
+            }
+
+            _value = value;
+            tagDict[TagType.Year].SetWithoutNotify(value.Year);
+            tagDict[TagType.Month].SetWithoutNotify(value.Month);
+            tagDict[TagType.Day].SetWithoutNotify(value.Day);
+            tagDict[TagType.Hour].SetWithoutNotify(value.Hour);
+            tagDict[TagType.Minute].SetWithoutNotify(value.Minute);
+            tagDict[TagType.Second].SetWithoutNotify(value.Second);
+        }
+
+        public void OnPointerClick(PointerEventData eventData) {
+            isOpen = !isOpen;
         }
     }
 }

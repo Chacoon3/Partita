@@ -1,4 +1,6 @@
-using System;
+using System.Collections.Generic;
+
+using TMPro;
 
 using UnityEngine;
 using UnityEngine.Events;
@@ -7,31 +9,35 @@ using UnityEngine.UI;
 
 namespace Partita.ExtComponent {
     /// <summary>
-    /// ¿É¹ö¶¯Ò³Ç©
+    /// å¯æ»šåŠ¨é¡µç­¾
     /// </summary>
-    /// <remarks>Ã¿Ö¡¼ì²â»¬ÂÖÊÂ¼ş²¢¹ö¶¯×ÔÉí  ¹ö¶¯Âß¼­£º int32Ã¶¾ÙÒ»ÇĞ×´Ì¬£¬mapperNormal½«Ò»¸ö×´Ì¬Ó³Éäµ½Ò³Ç©ÉÏ£¬ mapperOutOfBound´¦ÀíÎ´¶¨ÒåµÄ×´Ì¬</remarks>
+    /// <remarks>æ¯å¸§æ£€æµ‹æ»‘è½®äº‹ä»¶å¹¶æ»šåŠ¨è‡ªèº«  æ»šåŠ¨é€»è¾‘ï¼š int32æšä¸¾ä¸€åˆ‡çŠ¶æ€ï¼ŒmapperNormalå°†ä¸€ä¸ªçŠ¶æ€æ˜ å°„åˆ°é¡µç­¾ä¸Šï¼Œ mapperOutOfBoundå¤„ç†æœªå®šä¹‰çš„çŠ¶æ€</remarks>
+    [DisallowMultipleComponent]
     public class ScrollableTag : Image, IScrollHandler, IPointerClickHandler {
 
-        /// <summary>
-        /// Ò³Ç©ÎïÌåµÄÔ­ĞÍ
-        /// </summary>
-        public GameObject tagProto {
-            get => _tagProto;
-            set {
-                if (_tagProto == value) {
-                    return;
-                }
-                _tagProto = value;
+        private class TagItem {
+            public Image image { get; private set; }
+            public TMP_Text text { get; private set; }
+            public GameObject gameObject { get; private set; }
+            public TagItem(GameObject gameObject) {
+                this.gameObject = gameObject;
+                text = gameObject.GetComponentInChildren<TMP_Text>();
+                image = gameObject.GetComponent<Image>();
             }
         }
 
         /// <summary>
-        /// µ±Ç°×´Ì¬£¨¼´Ë÷Òı0µÄÒ³Ç©µÄ×´Ì¬£©
+        /// é¡µç­¾ç‰©ä½“çš„æ¨¡æ¿
+        /// </summary>
+        GameObject tagItemTemplate;
+
+        /// <summary>
+        /// å½“å‰çŠ¶æ€ï¼ˆå³ç´¢å¼•0çš„é¡µç­¾çš„çŠ¶æ€ï¼‰
         /// </summary>
         public int value {
             get => _value;
             set {
-                value = Mathf.Clamp(value, range.x, range.y);
+                value = Mathf.Clamp(value, min, max);
 
                 if (value == _value) {
                     return;
@@ -43,139 +49,108 @@ namespace Partita.ExtComponent {
             }
         }
         /// <summary>
-        /// ±êÇ©ÊıÁ¿
+        /// æœ€å¤§å€¼
+        /// </summary>
+        public int max {
+            get => _max;
+            set {
+                _max = Mathf.Clamp(value, min, int.MaxValue);
+            }
+        }
+        /// <summary>
+        /// æœ€å°å€¼
+        /// </summary>
+        public int min {
+            get => _min;
+            set {
+                _min = Mathf.Clamp(value, int.MinValue, max);
+            }
+        }
+        /// <summary>
+        /// æ ‡ç­¾æ•°é‡
         /// </summary>
         public int tagCount {
-            get => _tagTransform.childCount;
+            get => _tagCount;
             set {
-                value = Mathf.Clamp(value, 0, int.MaxValue);
+                value = Mathf.Clamp(value, 1, int.MaxValue);
                 if (value == _tagCount) {
                     return;
                 }
 
-                OnTagCountChange(value);
+                OnTagSettingChanged(value);
+                UpdateDisplay(value);
                 _tagCount = value;
             }
         }
-        public UnityEvent<int> onValueChanged { get; } = new UnityEvent<int>();
-        public Action<int, GameObject> mapper = delegate { };
-        public Action<int, GameObject> outBoundMapper = delegate { };
-        /// <summary>
-        /// ×´Ì¬µÄÉÏÏÂ½ç£¨¼ÙÉè×´Ì¬Á¬ĞøÇÒÓë×ÔÈ»Êı¼¯¿É½¨Á¢Ë«Éä£©
-        /// </summary>
-        public Vector2Int range {
-            get=> _range;
-            set {
-                if (_range == value) {
-                    return;
-                }
 
-                if (value.x > value.y) {
-                    value.x = value.y;
-                }                
-                _range = value;
-                _value = Mathf.Clamp(_value, range.x, range.y);
-                UpdateDisplay(_value);
+        public UnityEvent<int> onValueChanged { get; } = new UnityEvent<int>();
+
+        List<TagItem> tagItems = new List<TagItem>();
+        int _tagCount;
+        int _value = 0;
+        int _min = 0;
+        int _max = int.MaxValue;
+
+        #region ç”Ÿå‘½å‘¨æœŸ
+        protected override void Awake() {
+            base.Awake();
+
+            tagItemTemplate = transform.Find("Template").gameObject;
+            tagCount = 5;
+
+            for (int i = 0; i < transform.childCount; i++) {
+                tagItems.Add(new TagItem(transform.GetChild(i).gameObject));
             }
         }
 
-        Transform _tagTransform;
-        GameObject _tagProto;
-
-        int _tagCount;
-        int _value = 0;
-        Vector2Int _range = new Vector2Int(int.MinValue, int.MaxValue);
-
-        #region ÉúÃüÖÜÆÚ
         protected override void OnDestroy() {
             base.OnDestroy();
-            value = 0;
-            tagCount = 0;
-            tagProto = null;
-            mapper = delegate { };
-            onValueChanged.RemoveAllListeners();
-        }
-
-        protected override void Reset() {
-            base.Reset();
-            value = 0;
-            tagCount = 0;
-            tagProto = null;
-            mapper = delegate { };
             onValueChanged.RemoveAllListeners();
         }
         #endregion
 
-        #region ¶ÔÍâ½Ó¿Ú
-        /// <summary>
-        /// ×é¼ş³õÊ¼»¯
-        /// </summary>
-        /// <param name="tagCount">±êÇ©×ÜÊı</param>
-        /// <param name="initiaState">³õÖµ</param>
-        /// <param name="mapper">Ó³Éä¹æÔò</param>
-        /// <param name="proto">±êÇ©ÎïÌåÔ­ĞÍ</param>
-        public virtual void Init(int tagCount, int initiaState, Action<int, GameObject> mapper, Action<int, GameObject> outOfBoundMapper, GameObject proto, Vector2Int range) {
-            _tagTransform = transform.Find("Tags");
-            DestroyTags();
-
-            this.mapper = mapper;
-            this.outBoundMapper = outOfBoundMapper;
-            this.tagProto = proto;
-            this.tagCount = tagCount;
-            this.value = initiaState;
-            this.range = range;
-        }
-
+        #region å¯¹å¤–æ¥å£
         public virtual void SetWithoutNotify(int value) {
-            _value = value;
+            _value = Mathf.Clamp(value, min, max);
             UpdateDisplay(value);
         }
         #endregion
 
-        protected virtual void UpdateDisplay(int newState) {
-            //¸üĞÂÏÔÊ¾
-            for (int i = 0; i < tagCount; i++) {
-                if (newState < range.x || newState > range.y) {
-                    outBoundMapper(newState, _tagTransform.GetChild(i).gameObject);
+        protected virtual void UpdateDisplay(int newValue) {
+
+            for (int i = 0; i < tagItems.Count; i++) {
+                int value = newValue + i;
+                if (min <= value && value <= max) {
+                    tagItems[i].text.text = value.ToString();
                 }
                 else {
-                    mapper(newState, _tagTransform.GetChild(i).gameObject);
+                    tagItems[i].text.text = null;
                 }
-                newState++;
             }
         }
 
-        protected virtual void OnTagCountChange(int newTagCount) {
+        protected virtual void OnTagSettingChanged(int newTagCount) {
             int differenceAbs = Mathf.Abs(newTagCount - tagCount);
             if (newTagCount > tagCount) {
                 for (int i = 0; i < differenceAbs; i++) {
-                    Instantiate(tagProto, _tagTransform);
+                    Instantiate(tagItemTemplate, transform);
                 }
             }
             else {
                 DestroyTags(differenceAbs);
             }
-
-            UpdateDisplay(value);
         }
 
         protected virtual void DestroyTags(int count) {
-            count = Mathf.Clamp(count, 0, _tagTransform.childCount);
+            count = Mathf.Clamp(count, 0, transform.childCount);
             for (int i = 0; i < count; i++) {
-                Destroy(_tagTransform.GetChild(0).gameObject);
+                Destroy(transform.GetChild(0).gameObject);
             }
         }
 
-        protected virtual void DestroyTags() {
-            int childCount = _tagTransform.childCount;
-            for (int i = 0; i < childCount; i++) {
-                Destroy(_tagTransform.GetChild(0).gameObject);
-            }
-        }
-
-        #region Unity ½Ó¿Ú
+        #region Unity æ¥å£
         public virtual void OnScroll(PointerEventData eventData) {
-            if (eventData.scrollDelta.y < 0) {      //ÏòÏÂÊÓÎªÕı·½Ïò
+            if (eventData.scrollDelta.y < 0) {      //å‘ä¸‹è§†ä¸ºæ­£æ–¹å‘
                 value++;
             }
             else {
@@ -186,8 +161,8 @@ namespace Partita.ExtComponent {
         public virtual void OnPointerClick(PointerEventData eventData) {
             GameObject hit = null;
             int hitIndex = 0;
-            for (int i = 0; i < _tagTransform.childCount; i++) {
-                var obj = _tagTransform.GetChild(i).gameObject;
+            for (int i = 0; i < tagItems.Count; i++) {
+                var obj = tagItems[i].gameObject;
                 if (obj == eventData.pointerCurrentRaycast.gameObject) {
                     hit = obj;
                     hitIndex = i;

@@ -4,10 +4,7 @@ using System.Collections.Generic;
 
 using TMPro;
 
-using UniRx;
-
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Partita.Utility {
@@ -63,7 +60,7 @@ namespace Partita.Utility {
         /// <typeparam name="T">子组件</typeparam>
         /// <param name="gameObject"></param>
         /// <param name="name">子组件名字</param>
-        /// <param name="rereshChildren">是否刷新物体的所有子组件</param>
+        /// <param name="includeInactive">是否包含未激活物体</param>
         /// <returns></returns>
         public static T FindByName<T>(this GameObject gameObject, string name, bool includeInactive = true) where T : Component {
 
@@ -320,19 +317,7 @@ namespace Partita.Utility {
             }
         }
 
-        /// <summary>
-        /// 对集合的每个元素做批量处理（也即foreach的封装）
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="container"></param>
-        /// <param name="operation"></param>
-        public static void BatchOperate<T>(this IEnumerable<T> container, Action<T> operation) {
-            foreach (var item in container) {
-                operation(item);
-            }
-        }
-
-        public static void SetValues<T>(this IList<T> container, T val) {
+        public static void SetValue<T>(this IList<T> container, T val) {
             for (int i = 0; i < container.Count; i++) {
                 container[i] = val;
             }
@@ -366,33 +351,12 @@ namespace Partita.Utility {
             return (val - lower) / (upper - lower) * 100f;
         }
 
-        public static float ToPercentage(this float val, Vector2 bound) => ToPercentage(val, bound);
-
         /// <returns>秒转换为时间字符串</returns>
         public static string GetLogTime(int totalSec) {
             int hour = totalSec / 3600;
             int min = (totalSec / 60) % 60;
             int sec = totalSec % 60;
             return string.Format("{0}:{1}:{2}", hour.ToString("00"), min.ToString("00"), sec.ToString("00"));
-        }
-
-        /// <summary>
-        /// 递归获取首个指定类型的父节点，返回null若没有满足条件的父节点
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="trans"></param>
-        /// <returns></returns>
-        public static T GetParentComponent<T>(this Transform trans) where T : Component {
-            if (!trans.parent) {
-                return default;
-            }
-
-            if (!trans.TryGetComponent(out T res)) {
-                return trans.parent.GetParentComponent<T>();
-            }
-            else {
-                return res;
-            }
         }
 
         /// <summary>
@@ -725,28 +689,28 @@ namespace Partita.Utility {
             }
         }
 
-        public static void DoPeriodicPermanentContinuous(this MonoBehaviour caller, Action<int> onEachStep, Func<bool> shouldHalt, Action<int> onHalt, int stepCount, float stepTime) {
-            float timer = 0;
-            int stepCountor = 0;
-            Observable.EveryUpdate().Subscribe(_ => {
-                if (shouldHalt()) {
-                    onHalt?.Invoke(stepCountor);
-                }
-                else {
-                    timer += Time.deltaTime;
-                    if (timer >= stepTime) {
-                        timer = 0;
-                        onEachStep?.Invoke(stepCountor);
-
-                        stepCountor++;
-                        if (stepCountor >= stepCount) {
-                            stepCountor = 0;
-                        }
-                    }
-                }
-            })
-                .AddTo(caller);
+        public static RectTransform AnchorTo(this RectTransform rectTransform, RectTransform parent, Vector2 pivot, Vector2 anchorMin, Vector2 anchorMax, Vector2 offset = default) {
+            RectTransform oldParent = (RectTransform)rectTransform.parent;
+            rectTransform.SetParent(parent);
+            rectTransform.pivot = pivot;
+            rectTransform.anchorMin = anchorMin;
+            rectTransform.anchorMax = anchorMax;
+            rectTransform.sizeDelta = offset;
+            rectTransform.SetParent(oldParent);
+            return rectTransform;
         }
+
+        public static RectTransform AnchorTo(this RectTransform rectTransform, RectTransform parent, Vector2 pivot, Vector2 anchor, Vector2 offset = default) {
+            RectTransform oldParent = (RectTransform)rectTransform.parent;
+            rectTransform.SetParent(parent);
+            rectTransform.pivot = pivot;
+            rectTransform.anchorMin = anchor;
+            rectTransform.anchorMax = anchor;
+            rectTransform.localPosition = offset;
+            rectTransform.SetParent(oldParent);
+            return rectTransform;
+        }
+
     }
 }
 
