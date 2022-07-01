@@ -1,3 +1,8 @@
+/*-------------------------------------------------------------------------
+ * 作者：张自正
+ * 创建时间：2022/6/9 16:33:7
+ * 本类主要用途描述：
+ *------------------------------------------------------------------------*/
 using System;
 using System.Collections.Generic;
 
@@ -16,7 +21,7 @@ namespace Partita.ExtComponent {
     /// <remarks>类依赖：ScrollableTag</remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Image))]
-    public class TimeSelector : MonoBehaviour, IPointerClickHandler {
+    public class TimeSelector : Selectable, IPointerClickHandler {
 
         enum TagType {
             Year, Month, Day, Hour, Minute, Second,
@@ -28,14 +33,8 @@ namespace Partita.ExtComponent {
                 if (value == _value) {
                     return;
                 }
-                if (value < min) {
-                    value = min;
-                }
-                if (value > max) {
-                    value = max;
-                }
 
-                _value = value;
+                _value = DatetimeClamp(value);
                 valueText.text = _value.ToString("F");
                 SetWithoutNotify(_value);
                 onValueChanged.Invoke(value);
@@ -88,9 +87,10 @@ namespace Partita.ExtComponent {
             get => _isOpen;
             set {
                 _isOpen = value;
-                foreach (var item in tagDict) {
-                    item.Value.gameObject.SetActive(value);
-                }
+                //foreach (var item in tagDict) {
+                //    item.Value.gameObject.SetActive(value);
+                //}
+                tagParent.SetActive(_isOpen);
             }
         }
 
@@ -99,19 +99,21 @@ namespace Partita.ExtComponent {
         DateTime _value = DateTime.MinValue;
         DateTime _min = DateTime.MinValue;
         DateTime _max = DateTime.MaxValue;
+        GameObject tagParent;
 
         bool _isOpen;
 
         #region 生命周期
-        protected void Awake() {
-
+        protected override void Awake() {
+            base.Awake();
             #region 配置自身
             enabled = true;
             valueText = transform.Find("ValueText").GetComponent<TMP_Text>();
             #endregion
 
             #region 配置时间戮
-            var scrollables = GetComponentsInChildren<ScrollableTag>();
+            tagParent = transform.Find("Tags").gameObject;
+            var scrollables = tagParent.GetComponentsInChildren<ScrollableTag>();
             int tagType = 0;
             foreach (var tag in scrollables) {
                 TagType type = (TagType)tagType;
@@ -155,19 +157,26 @@ namespace Partita.ExtComponent {
             isOpen = false;
             SetWithoutNotify(value);
         }
+
+        protected override void Start() {
+            base.Start();
+            isOpen = false;
+        }
+
+        void Update() {
+            if (gameObject.activeInHierarchy) {
+                if (Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1)) {
+                    if (!RectTransformUtility.RectangleContainsScreenPoint((RectTransform)transform, Input.mousePosition) && !RectTransformUtility.RectangleContainsScreenPoint((RectTransform)tagParent.transform, Input.mousePosition)) {
+                        isOpen = false;
+                    }
+                }
+            }
+        }
         #endregion
 
         void OnScrollableValueChange(int val, TagType type) {
             DateTime newValue = GetValueFromTags();
-            //clamp
-            if (newValue < min) {
-                newValue = min;
-            }
-            if (newValue > max) {
-                newValue = max;
-            }
-
-            this.value = newValue;
+            this.value = DatetimeClamp(newValue);
 
             if (this.value.Month == 2) {
                 if (DateTime.IsLeapYear(this.value.Year)) {        //2月闰年
@@ -223,15 +232,41 @@ namespace Partita.ExtComponent {
             return (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12);
         }
 
-        public void SetWithoutNotify(DateTime value) {
-            if (value < min) {
-                value = min;
-            }
-            if (value > max) {
-                value = max;
+        void IPointerClickHandler.OnPointerClick(PointerEventData eventData) {
+            if (eventData.button != PointerEventData.InputButton.Left) {
+                return;
             }
 
-            _value = value;
+            if (eventData.pointerPressRaycast.gameObject == valueText.gameObject) {
+                isOpen = !isOpen;
+            }
+        }
+
+        DateTime DatetimeClamp(DateTime val) {
+            if (min > max) {
+                if (val > min) {
+                    val = min;
+                }
+                if (val < max) {
+                    val = max;
+                }
+
+                return val;
+            }
+            else {
+                if (val < min) {
+                    val = min;
+                }
+                if (val > max) {
+                    val = max;
+                }
+
+                return val;
+            }
+        }
+
+        public void SetWithoutNotify(DateTime value) {
+            _value = DatetimeClamp(value);
             tagDict[TagType.Year].SetWithoutNotify(value.Year);
             tagDict[TagType.Month].SetWithoutNotify(value.Month);
             tagDict[TagType.Day].SetWithoutNotify(value.Day);
@@ -240,8 +275,5 @@ namespace Partita.ExtComponent {
             tagDict[TagType.Second].SetWithoutNotify(value.Second);
         }
 
-        public void OnPointerClick(PointerEventData eventData) {
-            isOpen = !isOpen;
-        }
     }
 }

@@ -11,7 +11,7 @@ namespace Partita.Utility {
     /// <summary>
     /// 工具类
     /// </summary>
-    public static partial class ToolClass {
+    public static partial class Instruments {
 
         /// <summary>
         /// 简单UI面板
@@ -711,6 +711,22 @@ namespace Partita.Utility {
             return rectTransform;
         }
 
+        public static bool IsSame<T>(ICollection<T> self, ICollection<T> another) {
+            if (self.Count != another.Count) {
+                return false;
+            }
+            Queue<T> queue = new Queue<T>(self);
+            for (int i = 0; i < another.Count; i++) {
+                var key = queue.Peek();
+                if (another.Contains(key)) {
+                    queue.Dequeue();
+                }
+                else {
+                    return false;
+                }
+            }
+            return queue.Count == 0;
+        }
     }
 }
 

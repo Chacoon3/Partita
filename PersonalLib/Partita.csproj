@@ -33,6 +33,9 @@
     <Reference Include="UnityEngine.UI">
       <HintPath>E:\Unity\unity2020.3.18f\Editor\Data\Resources\PackageManager\ProjectTemplates\libcache\com.unity.template.2d-5.0.0\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>E:\Unity\unity2020.3.18f\Editor\Data\Managed\UnityEngine\UnityEngine.UIModule.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
