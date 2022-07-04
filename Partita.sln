@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Partita", "PersonalLib\Part
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleProgram", "ConsoleProgram\ConsoleProgram.csproj", "{0031B178-2BC3-47E3-BC59-6215C5FC6C55}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZFrame", "UnityFramework\ZFrame.csproj", "{C1683435-A1FD-4649-BA02-637E34BEEB42}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JFrame", "JFrame\JFrame.csproj", "{DB8BC7C5-5A58-47E4-96DA-9F261C59A90D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{0031B178-2BC3-47E3-BC59-6215C5FC6C55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0031B178-2BC3-47E3-BC59-6215C5FC6C55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0031B178-2BC3-47E3-BC59-6215C5FC6C55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1683435-A1FD-4649-BA02-637E34BEEB42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1683435-A1FD-4649-BA02-637E34BEEB42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1683435-A1FD-4649-BA02-637E34BEEB42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1683435-A1FD-4649-BA02-637E34BEEB42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB8BC7C5-5A58-47E4-96DA-9F261C59A90D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB8BC7C5-5A58-47E4-96DA-9F261C59A90D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB8BC7C5-5A58-47E4-96DA-9F261C59A90D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB8BC7C5-5A58-47E4-96DA-9F261C59A90D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
