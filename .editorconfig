@@ -1,0 +1,7 @@
+﻿[*.cs]
+
+# IDE0055: 修正格式
+dotnet_diagnostic.IDE0055.severity = suggestion
+
+# Default severity for all analyzer diagnostics
+dotnet_analyzer_diagnostic.severity = suggestion

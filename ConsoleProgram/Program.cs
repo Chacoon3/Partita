@@ -6,4 +6,3 @@ for (byte i = 0; i < 255; i++) {
     b[0] = i;
     Console.WriteLine(i +  "\t" + encoding.GetString(b));    
 }
-
