@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
- * 作者：张自正
- * 创建时间：2022/7/14 16:31:47
- * 本类主要用途描述：
+ * Author：Chaconn3
+ * Date：2022/7/14 16:31:47
+ * Description：
  *------------------------------------------------------------------------*/
 
 using Manager.Scripts.Data;
@@ -11,7 +11,7 @@ using UnityEngine.UI;
 
 namespace Manager.Scripts.Profession.UI {
     /// <summary>
-    /// 鼠标点击效果
+    /// mouse click effect
     /// </summary>
     class ClickEffect : MonoBehaviour {
 
@@ -43,12 +43,12 @@ namespace Manager.Scripts.Profession.UI {
             }
         }
 
-        //重置自身状态
+        //reset
         void SelfReset() {
             selfRect.anchoredPosition = Vector2.zero;
         }
 
-        //依赖注入
+        // dependency inject
         public static void Inject(GameObject protoObj, Sprite sprite) {
             pool = new ObjectPool<ClickEffect>(
                     pop => { pop.gameObject.SetActive(true); },
