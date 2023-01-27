@@ -1,15 +1,15 @@
 /*-------------------------------------------------------------------------
- * 作者：张自正
- * 创建时间：2022/6/17 14:11:35
- * 本类主要用途描述：抽象数据类型  (Abstract data type)
+ * Author：Chacoon3
+ * Date：2022/6/17 14:11:35
+ * Description：Abstract data type
  *------------------------------------------------------------------------*/
 using System;
 
 namespace Partita.ADT {
 
-    #region 一般对象
+    #region general objects
     /// <summary>
-    /// 二元序对
+    /// binary tuple
     /// </summary>
     /// <typeparam name="T1"></typeparam>
     /// <typeparam name="T2"></typeparam>
@@ -23,7 +23,7 @@ namespace Partita.ADT {
     }
 
     /// <summary>
-    /// 互斥序对（同一时刻至多只有一项有值）
+    /// xor binary tuple（at most one item contains non-null value at any given time）
     /// </summary>
     /// <typeparam name="T1"></typeparam>
     /// <typeparam name="T2"></typeparam>
@@ -58,23 +58,23 @@ namespace Partita.ADT {
     }
 
     /// <summary>
-    /// 节流阀
+    /// Throttle
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <remarks>封装一个关于T的方法。避免在规定时间内对T的相同参数的重复调用</remarks>
+    /// <remarks>encapsulate a method of T. Precent invocation of the method with the same parameters within certain period</remarks>
     public class Throttle<T> {
         /// <summary>
-        /// 最近一次调用节流阀的时间
+        /// the most recent time when the method is invoked
         /// </summary>
         public DateTime recentInvokeTime { get; private set; } = DateTime.MinValue;
         /// <summary>
-        /// 时限
+        /// time limit
         /// </summary>
         public TimeSpan timeWindow;
 
-        T recentContent;        //最近一次方法调用用到的参数
-        Action<T> action;      //定义封装的方法
-        Func<T, T, bool> equalityChecker;      //定义如何判断该方法所用参数的相等性
+        T recentContent;        //the parameter used in last invocation
+        Action<T> action;      //method being encapsulated
+        Func<T, T, bool> equalityChecker;      //delegate which gives the definition of identity of the parameter T
 
         public Throttle(Action<T> action, Func<T, T, bool> equalityChecker) {
             this.action = action;
@@ -103,9 +103,9 @@ namespace Partita.ADT {
 
     public class Throttle {
         public DateTime recentInvokeTime { get; private set; } = DateTime.MinValue;
-        public TimeSpan timeWindow;     //时间限制
+        public TimeSpan timeWindow;     //time limit 
 
-        Action action;      //定义封装的方法
+        Action action;      //method being encapsulated
 
         public Throttle(Action action) {
             this.action = action;
