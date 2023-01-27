@@ -3,12 +3,12 @@ using UnityEngine.EventSystems;
 
 namespace Partita.ExtComponent {
     /// <summary>
-    /// 实现UI物体的拖拽功能
+    /// implement of the dragging feature of UI objects
     /// </summary>
    public class Dragger : MonoBehaviour, IPointerDownHandler, IPointerUpHandler {
 
         /// <summary>
-        /// 激活时是否重置默认位置
+        /// whether replace when activated
         /// </summary>
         public bool resetPosOnEnable { get; set; }
         Vector2 defaultPos;
