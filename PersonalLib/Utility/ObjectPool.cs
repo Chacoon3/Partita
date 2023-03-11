@@ -1,15 +1,10 @@
-/*-------------------------------------------------------------------------
- * ×÷Õß£ºUnity
- * ´´½¨Ê±¼ä£º2022/6/9 9:46:34
- * ±¾ÀàÖ÷ÒªÓÃÍ¾ÃèÊö£º
- *------------------------------------------------------------------------*/
 using System;
 using System.Collections.Generic;
 
 namespace Partita.Utility {
 
     /// <summary>
-    /// ¶ÔÏó³Ø
+    /// å¯¹è±¡æ± 
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class ObjectPool<T> {
